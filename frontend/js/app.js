@@ -324,9 +324,51 @@ async function refreshStatus() {
       ac.title = `Paper-konto: $${Math.round(a.equity).toLocaleString('sv-SE')} · köpkraft $${Math.round(a.buying_power).toLocaleString('sv-SE')} · dataflöde ${a.feed}`;
     }
     state.live.enabled = a.enabled && a.ok !== false;
+    state.marketOpen = a.enabled && a.ok ? a.market_open : null;
+    tickClock();
   } catch {
     /* status is decorative */
   }
+}
+
+// ---------------------------------------------------------------------------
+// Market tape (live via Alpaca) and New York clock
+// ---------------------------------------------------------------------------
+
+const TAPE = ['SPY', 'QQQ', 'DIA', 'IWM', 'ACWI', 'EFA', 'EEM', 'IEF', 'TLT', 'GLD', 'AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA', 'BRK-B', 'JPM', 'XOM'];
+
+async function refreshTape() {
+  try {
+    const res = await api.live(TAPE);
+    const tape = $('#tape');
+    if (!res.enabled || !Object.keys(res.quotes).length) {
+      tape.hidden = true;
+      return;
+    }
+    const items = TAPE.filter((t) => res.quotes[t]).map((t) => {
+      const q = res.quotes[t];
+      const c = q.change ?? 0;
+      const dir = c > 0.0005 ? 'up' : c < -0.0005 ? 'down' : 'flat';
+      const arrow = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '■';
+      const px = q.price.toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return `<span class="tick ${dir}"><span class="tick-sym">${esc(t)}</span><span class="tick-px">${px}</span><span class="tick-chg">${arrow} ${pct(c, 2, true)}</span></span>`;
+    }).join('');
+    // Duplicated so the CSS marquee loops seamlessly.
+    $('#tape-track').innerHTML = items + items;
+    tape.hidden = false;
+  } catch {
+    /* tape is decorative */
+  }
+}
+
+const nyTime = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+function tickClock() {
+  const el = $('#clock');
+  if (!el) return;
+  const open = state.marketOpen;
+  const label = open == null ? '' : open ? ' · öppen' : ' · stängd';
+  el.innerHTML = `<span class="dot ${open ? 'on' : ''}"></span><span>NYSE <b>${nyTime.format(new Date())}</b>${label}</span>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -336,6 +378,8 @@ function closeMenu() {
 }
 
 async function init() {
+  // Redraw charts once web fonts are in, so canvas text uses them.
+  document.fonts?.ready.then(() => rethemeCharts());
   initTheme($('#theme-toggle'), () => {
     rethemeCharts();
     if (state.detail || state.route.id === 'compare') renderFilters(state.list?.strategies.find((s) => s.id === state.route.id));
@@ -354,6 +398,10 @@ async function init() {
   state.route = parseHash();
   refreshStatus();
   setInterval(refreshStatus, 60000);
+  refreshTape();
+  setInterval(refreshTape, 20000);
+  tickClock();
+  setInterval(tickClock, 1000);
   window.addEventListener('hashchange', () => {
     const r = parseHash();
     if (JSON.stringify(r) !== JSON.stringify(state.route)) {

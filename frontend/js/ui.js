@@ -20,7 +20,7 @@ export function mountChart(el, build) {
     resizeObserver().observe(el);
   }
   entry.build = build;
-  entry.chart.setOption(build(tokens()), true);
+  entry.chart.setOption(withFont(build(tokens())), true);
   return entry.chart;
 }
 
@@ -33,7 +33,13 @@ export function disposeCharts() {
 
 export function rethemeCharts() {
   const t = tokens();
-  for (const entry of charts.values()) entry.chart.setOption(entry.build(t), true);
+  for (const entry of charts.values()) entry.chart.setOption(withFont(entry.build(t)), true);
+}
+
+/** Default every chart's text to the UI font (canvas cannot inherit CSS fonts). */
+function withFont(option) {
+  const t = tokens();
+  return { ...option, textStyle: { fontFamily: t.font, ...(option.textStyle ?? {}) } };
 }
 
 function resizeObserver() {

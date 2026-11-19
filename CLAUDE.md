@@ -8,6 +8,7 @@ Instruktioner för Claude Code i det här repot.
 - **Ingen look-ahead:** nyckeltal används först från inlämningsdatum (`fundamentals.point_in_time`), aktier är valbara först från indexinträde (`Store.members`), ML tränas walk-forward. Ändringar får inte bryta detta.
 - Nya strategier: ärv `RankStrategy`/`AllocationStrategy` i `backend/app/strategies/`, registrera i `build()`, skriv förklaring i `docs.py`.
 - Diagramfärger kommer från CSS-variablerna i `frontend/css/styles.css`. Färg följer entiteten (strategi = slot 1, S&P 500 = 2, Global = 3, OMXS30 = 4, Lika vikt = 5).
+- Typografi: Inter för text och siffror (tabellsiffror), JetBrains Mono bara för etiketter, symboler och chips. Mono-nollor ser ut som 8:or i små storlekar.
 - Alpaca-nycklar bara i `.env`, används bara i backend.
 - Kör `pytest` efter backendändringar. Starta lokalt med `uvicorn backend.app.main:app --reload`.
 - Cache: `data/cache/` (nyckeltalspaneler och ML-poäng) byggs om automatiskt när datan ändras.

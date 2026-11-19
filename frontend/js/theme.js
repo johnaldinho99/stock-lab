@@ -38,6 +38,11 @@ export function tokens() {
   const v = (name) => cs.getPropertyValue(name).trim();
   return {
     surface: v('--surface'),
+    surface2: v('--surface-2'),
+    accent: v('--accent'),
+    font: v('--font'),
+    mono: v('--mono'),
+    dark: isDark(),
     ink: v('--ink'),
     ink2: v('--ink-2'),
     muted: v('--muted'),
